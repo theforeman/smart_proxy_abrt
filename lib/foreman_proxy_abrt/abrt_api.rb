@@ -10,13 +10,9 @@ module Proxy::Abrt
     include ::Proxy::Log
     helpers ::Proxy::Helpers
 
-    get '/test' do
-      'It works?'
-    end
-
-    post '/reports/new' do
+    post '/reports/new/' do
       begin
-        cn = Proxy::AbrtProxy::common_name request
+        cn = Proxy::Abrt::common_name request
       rescue Proxy::Error::Unauthorized => e
         log_halt 403, "Client authentication failed: #{e.message}"
       end
@@ -28,7 +24,7 @@ module Proxy::Abrt
       response = nil
       if Proxy::Abrt::Plugin.settings.server_url
         begin
-          result = Proxy::AbrtProxy::faf_request "/reports/new/", ureport_json
+          result = Proxy::Abrt::faf_request "/reports/new/", ureport_json
           response = result.body if result.code.to_s == STATUS_ACCEPTED.to_s
         rescue StandardError => e
           logger.error "Unable to forward to ABRT server: #{e}"
@@ -43,7 +39,7 @@ module Proxy::Abrt
 
       #save report to disk
       begin
-        Proxy::AbrtProxy::HostReport.save cn, ureport
+        Proxy::Abrt::HostReport.save cn, ureport
       rescue StandardError => e
         log_halt 500, "Failed to save the report: #{e}"
       end
@@ -57,7 +53,7 @@ module Proxy::Abrt
       if Proxy::Abrt::Plugin.settings.server_url
         body = request['file'][:tempfile].read
         begin
-          result = Proxy::AbrtProxy::faf_request "/reports/#{params[:action]}/", body
+          result = Proxy::Abrt::faf_request "/reports/#{params[:action]}/", body
         rescue StandardError => e
           log_halt 503, "ABRT server unavailable: #{e}"
         end

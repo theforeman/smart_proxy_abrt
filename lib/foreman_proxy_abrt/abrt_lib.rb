@@ -1,8 +1,11 @@
 require 'net/http'
 require 'net/https'
 require 'uri'
-require 'proxy/log'
 require 'time'
+require 'fileutils'
+
+require 'proxy/log'
+require 'proxy/request'
 
 module Proxy::Abrt
   def self.random_alpha_string(length)
@@ -217,7 +220,7 @@ module Proxy::Abrt
     end
 
     def self.unique_filename(prefix)
-      File.join(HostReport.spooldir, prefix + Proxy::AbrtProxy::random_alpha_string(8))
+      File.join(HostReport.spooldir, prefix + Proxy::Abrt::random_alpha_string(8))
     end
 
     def self.with_unique_filename(prefix)

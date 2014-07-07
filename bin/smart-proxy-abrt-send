@@ -1,25 +1,35 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/lib' #XXX!
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/modules' #XXX!
 
-require 'fileutils'
-require 'json'
+# We rely on the main smart_proxy module to initialize the plugins so that we
+# can access our module's settings. Also used from smart-proxy code: global
+# settings, logging, foreman requests.
 require 'smart_proxy'
-require "daemon" unless PLATFORM =~ /mingw/
 
-exit unless SETTINGS.abrtproxy == true
+require 'foreman_proxy_abrt'
+require 'foreman_proxy_abrt/abrt_lib'
 
-# Override the log location
-SETTINGS.log_file = SETTINGS.abrt_log_file
+# Substitute our own logger so that we don't log to the main smart-proxy logfile.
+module Proxy
+  module Log
+    @@logger = ::Logger.new(Proxy::Abrt::Plugin.settings.abrt_send_log_file, 6, 1024*1024*10)
+    @@logger.level = ::Logger.const_get(Proxy::SETTINGS.log_level.upcase)
+  end
+end
 include Proxy::Log
 
-if !SETTINGS.foreman_url
+# Don't run if ABRT plugin is disabled.
+exit unless Proxy::Abrt::Plugin.settings.enabled == true
+
+if !Proxy::SETTINGS.foreman_url
   logger.error "Foreman URL not configured"
   exit false
 end
 
 begin
-  require 'satyr' if SETTINGS.abrt_aggregate_reports
+  require 'satyr' if Proxy::Abrt::Plugin.settings.aggregate_reports
 rescue LoadError
   logger.error "The satyr gem required for report aggregation was not found. "\
                "You need to either install it or disable the aggregation."
@@ -29,7 +39,7 @@ def send_reports_from_spool
   reports_by_host = {}
 
   # load reports from disk
-  reports = Proxy::AbrtProxy::HostReport.load_from_spool
+  reports = Proxy::Abrt::HostReport.load_from_spool
 
   # aggregate reports by host and by duplication hash if possible
   reports.each do |report|
@@ -69,9 +79,10 @@ if ARGV[0] == "--daemon"
     puts "Daemon mode is not supported on Windows."
     exit false
   end
+  require 'daemon'
   Process.daemon true
 
-  sleep_interval = SETTINGS.abrt_send_period || 600
+  sleep_interval = Proxy::Abrt::Plugin.settings.abrt_send_period || 600
   loop do
     send_reports_from_spool
     sleep sleep_interval

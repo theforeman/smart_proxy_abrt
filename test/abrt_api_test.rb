@@ -1,10 +1,10 @@
-require 'test_helper'
-require 'helpers'
 require 'json'
-require 'abrtproxy_api'
 require 'ostruct'
 require 'webrick'
 require 'tmpdir'
+
+require 'test_helper'
+require 'foreman_proxy_abrt/abrt_api'
 
 ENV['RACK_ENV'] = 'test'
 
@@ -12,7 +12,7 @@ class AbrtApiTest < Test::Unit::TestCase
   include Rack::Test::Methods
 
   def app
-    SmartProxy.new
+    Proxy::Abrt::Api.new
   end
 
   def setup
@@ -20,7 +20,7 @@ class AbrtApiTest < Test::Unit::TestCase
     @post_data = {
       "file" => Rack::Test::UploadedFile.new(ureport_file, "application/json")
     }
-    Proxy::AbrtProxy.stubs(:common_name).returns('localhost')
+    Proxy::Abrt.stubs(:common_name).returns('localhost')
   end
 
   def assert_dir_contains_report(dir)
@@ -36,7 +36,7 @@ class AbrtApiTest < Test::Unit::TestCase
     Dir.mktmpdir do |tmpdir|
       SETTINGS.stubs(:abrt_spooldir).returns(tmpdir)
 
-      post "/abrt/reports/new/", @post_data
+      post "/reports/new/", @post_data
 
       assert last_response.successful?
       assert_equal last_response.status, 202
@@ -56,13 +56,13 @@ class AbrtApiTest < Test::Unit::TestCase
     response_status = 202
     faf_response = OpenStruct.new(:code => response_status, :body => response_body)
 
-    Proxy::AbrtProxy.expects(:faf_request).returns(faf_response)
+    Proxy::Abrt.expects(:faf_request).returns(faf_response)
     SETTINGS.stubs(:abrt_server_url).returns('https://doesnt.matter/')
 
     Dir.mktmpdir do |tmpdir|
       SETTINGS.stubs(:abrt_spooldir).returns(tmpdir)
 
-      post "/abrt/reports/new/", @post_data
+      post "/reports/new/", @post_data
 
       assert last_response.successful?
       assert_equal last_response.status, response_status
@@ -73,15 +73,15 @@ class AbrtApiTest < Test::Unit::TestCase
   end
 
   def test_forwarding_other_endpoints
-    post "/abrt/reports/attach/", @post_data
+    post "/reports/attach/", @post_data
 
     assert_equal last_response.status, 501
 
     faf_response = OpenStruct.new(:code => 201, :body => "Whatever!")
-    Proxy::AbrtProxy.expects(:faf_request).returns(faf_response)
+    Proxy::Abrt.expects(:faf_request).returns(faf_response)
     SETTINGS.stubs(:abrt_server_url).returns('https://doesnt.matter/')
 
-    post "/abrt/reports/attach/", @post_data
+    post "/reports/attach/", @post_data
 
     assert_equal last_response.status, faf_response.code
     assert_equal last_response.body, faf_response.body

@@ -7,7 +7,8 @@ Gem::Specification.new do |s|
   s.description = 'This smart proxy plugin, together with a Foreman plugin, add the capability to send ABRT micro-reports from your managed hosts to Foreman.'
   s.authors = ['Martin Milata']
   s.email = 'mmilata@redhat.com'
-  s.files = Dir['{bin,lib,settings.d,bundler.d,test,extra}/**/*'] + ['README', 'LICENSE']
+  s.files = Dir['{bin,lib,settings.d,bundler.d,test,extra}/**/*'] + ['README', 'LICENSE', 'Rakefile']
+  s.executables = ['smart-proxy-abrt-send']
   s.homepage = 'http://github.com/abrt/foreman_proxy_abrt'
   s.license = 'GPL-3'
 end

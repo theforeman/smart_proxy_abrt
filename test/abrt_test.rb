@@ -18,7 +18,7 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_multipart_form_data_file
     file_contents = '{"foo":"bar"}'
-    headers, body = Proxy::AbrtProxy.form_data_file(file_contents, 'application/json')
+    headers, body = Proxy::Abrt.form_data_file(file_contents, 'application/json')
     request_text = "POST /abrt/whatever/ HTTP/1.1\r\n"
     headers.each do |key,value|
       request_text << key + ": " + value + "\r\n"
@@ -35,22 +35,22 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_hostreport_open
     file = File.join @tmpdir, "ureport-ondisk-host1-01"
-    hr = Proxy::AbrtProxy::HostReport.new file
+    hr = Proxy::Abrt::HostReport.new file
     assert_equal "f19-managed.virtnet", hr.host
     assert_equal [file], hr.files
     assert_equal 1, hr.reports.size
   end
 
   def test_hostreport_load_directory
-    reports = Proxy::AbrtProxy::HostReport.load_from_spool
+    reports = Proxy::Abrt::HostReport.load_from_spool
     assert_equal 4, reports.size
-    reports.each { |r| assert r.is_a?(Proxy::AbrtProxy::HostReport) }
+    reports.each { |r| assert r.is_a?(Proxy::Abrt::HostReport) }
   end
 
   def test_hostreport_merge_without_duphash
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|
-      reports << Proxy::AbrtProxy::HostReport.new(file)
+      reports << Proxy::Abrt::HostReport.new(file)
     end
 
     assert_equal 3, reports.size
@@ -65,12 +65,12 @@ class AbrtTest < Test::Unit::TestCase
   def test_hostreport_merge_with_duphash
     base = File.join(@tmpdir, "ureport-ondisk-host1-")
     reports = []
-    Proxy::AbrtProxy::HostReport.stubs(:duphash).returns("aaa")
-    reports << Proxy::AbrtProxy::HostReport.new(base + "01")
-    reports << Proxy::AbrtProxy::HostReport.new(base + "02")
-    Proxy::AbrtProxy::HostReport.stubs(:duphash).returns("bbb")
-    reports << Proxy::AbrtProxy::HostReport.new(base + "03")
-    Proxy::AbrtProxy::HostReport.unstub(:duphash)
+    Proxy::Abrt::HostReport.stubs(:duphash).returns("aaa")
+    reports << Proxy::Abrt::HostReport.new(base + "01")
+    reports << Proxy::Abrt::HostReport.new(base + "02")
+    Proxy::Abrt::HostReport.stubs(:duphash).returns("bbb")
+    reports << Proxy::Abrt::HostReport.new(base + "03")
+    Proxy::Abrt::HostReport.unstub(:duphash)
 
     r = reports[0]
     r.merge(reports[1])
@@ -85,7 +85,7 @@ class AbrtTest < Test::Unit::TestCase
 
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|
-      reports << Proxy::AbrtProxy::HostReport.new(file)
+      reports << Proxy::Abrt::HostReport.new(file)
     end
 
     r = reports[0]
@@ -97,13 +97,13 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_hostreport_unlink
     # single report
-    r1 = Proxy::AbrtProxy::HostReport.new File.join(@tmpdir, "ureport-ondisk-host2-01")
+    r1 = Proxy::Abrt::HostReport.new File.join(@tmpdir, "ureport-ondisk-host2-01")
     r1.unlink
 
     # merged reports
-    r2 = Proxy::AbrtProxy::HostReport.new File.join(@tmpdir, "ureport-ondisk-host1-01")
-    r2.merge Proxy::AbrtProxy::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-02"))
-    r2.merge Proxy::AbrtProxy::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-03"))
+    r2 = Proxy::Abrt::HostReport.new File.join(@tmpdir, "ureport-ondisk-host1-01")
+    r2.merge Proxy::Abrt::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-02"))
+    r2.merge Proxy::Abrt::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-03"))
     r2.unlink
 
     dir_contents = Dir[File.join(@tmpdir, "*")]
@@ -114,9 +114,9 @@ class AbrtTest < Test::Unit::TestCase
     Dir[File.join(@tmpdir, "*")].each { |file| File.unlink file }
     ureport = IO.read "test/fixtures/abrt/ureport1.json"
     ureport = JSON.parse ureport
-    Proxy::AbrtProxy::HostReport.save "localhost", ureport
+    Proxy::Abrt::HostReport.save "localhost", ureport
 
-    hr = Proxy::AbrtProxy::HostReport.new Dir[File.join(@tmpdir, "*")][0]
+    hr = Proxy::Abrt::HostReport.new Dir[File.join(@tmpdir, "*")][0]
     assert_equal "localhost", hr.host
     assert_equal 1, hr.reports.size
   end
