@@ -1,15 +1,17 @@
-require 'test_helper'
-require 'proxy/abrtproxy'
 require 'tmpdir'
 require 'fileutils'
+
+require 'test_helper'
+require 'foreman_proxy_abrt'
+require 'foreman_proxy_abrt/abrt_lib'
 
 class AbrtTest < Test::Unit::TestCase
   def setup
     @tmpdir = Dir.mktmpdir "foreman-proxy-test"
-    FileUtils.cp Dir["test/fixtures/abrt/ureport-ondisk-*"], @tmpdir
+    FileUtils.cp Dir["test/fixtures/ureport-ondisk-*"], @tmpdir
 
-    SETTINGS.stubs(:abrt_aggregate_reports).returns(false)
-    SETTINGS.stubs(:abrt_spooldir).returns(@tmpdir)
+    Proxy::Abrt::Plugin.settings.stubs(:aggregate_reports).returns(false)
+    Proxy::Abrt::Plugin.settings.stubs(:spooldir).returns(@tmpdir)
   end
 
   def teardown
@@ -81,7 +83,7 @@ class AbrtTest < Test::Unit::TestCase
   end
 
   def test_hostreport_send_to_foreman
-    Proxy::Request::Reports.any_instance.expects(:post_report).once
+    Proxy::Request::ForemanRequest.any_instance.expects(:send_request).once
 
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|
@@ -112,7 +114,7 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_hostreport_save
     Dir[File.join(@tmpdir, "*")].each { |file| File.unlink file }
-    ureport = IO.read "test/fixtures/abrt/ureport1.json"
+    ureport = IO.read "test/fixtures/ureport1.json"
     ureport = JSON.parse ureport
     Proxy::Abrt::HostReport.save "localhost", ureport
 

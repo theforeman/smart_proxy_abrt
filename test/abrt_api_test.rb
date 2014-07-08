@@ -2,6 +2,7 @@ require 'json'
 require 'ostruct'
 require 'webrick'
 require 'tmpdir'
+require 'sinatra'
 
 require 'test_helper'
 require 'foreman_proxy_abrt/abrt_api'
@@ -16,7 +17,7 @@ class AbrtApiTest < Test::Unit::TestCase
   end
 
   def setup
-    ureport_file = "test/fixtures/abrt/ureport1.json"
+    ureport_file = "test/fixtures/ureport1.json"
     @post_data = {
       "file" => Rack::Test::UploadedFile.new(ureport_file, "application/json")
     }
@@ -34,7 +35,7 @@ class AbrtApiTest < Test::Unit::TestCase
 
   def test_forwarding_to_foreman
     Dir.mktmpdir do |tmpdir|
-      SETTINGS.stubs(:abrt_spooldir).returns(tmpdir)
+      Proxy::Abrt::Plugin.settings.stubs(:spooldir).returns(tmpdir)
 
       post "/reports/new/", @post_data
 
@@ -57,10 +58,10 @@ class AbrtApiTest < Test::Unit::TestCase
     faf_response = OpenStruct.new(:code => response_status, :body => response_body)
 
     Proxy::Abrt.expects(:faf_request).returns(faf_response)
-    SETTINGS.stubs(:abrt_server_url).returns('https://doesnt.matter/')
+    Proxy::Abrt::Plugin.settings.stubs(:server_url).returns('https://doesnt.matter/')
 
     Dir.mktmpdir do |tmpdir|
-      SETTINGS.stubs(:abrt_spooldir).returns(tmpdir)
+      Proxy::Abrt::Plugin.settings.stubs(:spooldir).returns(tmpdir)
 
       post "/reports/new/", @post_data
 
@@ -79,7 +80,7 @@ class AbrtApiTest < Test::Unit::TestCase
 
     faf_response = OpenStruct.new(:code => 201, :body => "Whatever!")
     Proxy::Abrt.expects(:faf_request).returns(faf_response)
-    SETTINGS.stubs(:abrt_server_url).returns('https://doesnt.matter/')
+    Proxy::Abrt::Plugin.settings.stubs(:server_url).returns('https://doesnt.matter/')
 
     post "/reports/attach/", @post_data
 
