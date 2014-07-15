@@ -34,7 +34,16 @@ module Proxy::Abrt
         # forwarding is not configured or failed
         # FAF source that generates replies is in src/webfaf/reports/views.py
         response = { "result" => false,
-                     "message" => "Report queued" }.to_json
+                     "message" => "Report queued" }
+        if Proxy::SETTINGS.foreman_url
+          foreman_url = Proxy::SETTINGS.foreman_url
+          foreman_url += "/" if url[-1] != "/"
+          foreman_url += "hosts/#{cn}/abrt_reports"
+          response["reported_to"] = [{ "reporter" => "Foreman",
+                                       "type" => "url",
+                                       "value" => foreman_url }]
+        end
+        response = response.to_json
       end
 
       #save report to disk
