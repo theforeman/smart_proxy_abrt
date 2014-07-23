@@ -17,7 +17,8 @@ Requires: ruby(rubygems)
 Requires: rubygem(ffi)
 Requires: foreman-proxy
 Requires: crontabs
-Requires: rubygem-satyr
+## does not exist in repository yet
+#Requires: rubygem-satyr
 BuildRequires: ruby(release)
 BuildRequires: rubygems-devel
 BuildRequires: ruby
