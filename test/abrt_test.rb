@@ -83,7 +83,7 @@ class AbrtTest < Test::Unit::TestCase
   end
 
   def test_hostreport_send_to_foreman
-    Proxy::Request::ForemanRequest.any_instance.expects(:send_request).once
+    Proxy::HttpRequest::ForemanRequest.any_instance.expects(:send_request).once
 
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|

@@ -137,7 +137,7 @@ module Proxy::Abrt
     def send_to_foreman
       foreman_report = create_foreman_report
       logger.debug "Sending #{foreman_report}"
-      Proxy::Request::ForemanRequest.new.send_request("/api/abrt_reports", foreman_report.to_json)
+      Proxy::HttpRequest::ForemanRequest.new.send_request("/api/abrt_reports", foreman_report.to_json)
     end
 
     def unlink
