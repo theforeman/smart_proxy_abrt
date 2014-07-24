@@ -2,7 +2,7 @@
 
 %global foreman_proxy_bundlerd_dir /usr/share/foreman-proxy/bundler.d
 %global foreman_proxy_pluginconf_dir /etc/foreman-proxy/settings.d
-%global spool_dir /var/spool/foreman-proxy/abrt-send/
+%global spool_dir /var/spool/foreman-proxy-abrt
 
 Name: rubygem-%{gem_name}
 Version: 0.0.1
@@ -94,7 +94,7 @@ mkdir -p %{buildroot}%{spool_dir}
 %{gem_spec}
 %{gem_instdir}/bin
 
-%dir %{spool_dir}
+%dir %attr(0755, foreman-proxy, foreman-proxy) %{spool_dir}
 %{foreman_proxy_bundlerd_dir}/abrt.rb
 %{_bindir}/smart-proxy-abrt-send
 %doc %{foreman_proxy_pluginconf_dir}/abrt.yml.example
