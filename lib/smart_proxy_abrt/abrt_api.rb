@@ -1,7 +1,7 @@
 require 'openssl'
 require 'json'
 
-require 'foreman_proxy_abrt/abrt_lib'
+require 'smart_proxy_abrt/abrt_lib'
 
 STATUS_ACCEPTED = 202
 

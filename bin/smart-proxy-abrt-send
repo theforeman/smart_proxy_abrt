@@ -8,8 +8,8 @@ $LOAD_PATH.unshift '/usr/share/foreman-proxy/modules' #XXX!
 # settings, logging, foreman requests.
 require 'smart_proxy'
 
-require 'foreman_proxy_abrt'
-require 'foreman_proxy_abrt/abrt_lib'
+require 'smart_proxy_abrt'
+require 'smart_proxy_abrt/abrt_lib'
 
 # Substitute our own logger so that we don't log to the main smart-proxy logfile.
 module Proxy

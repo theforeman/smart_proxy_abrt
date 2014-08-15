@@ -1,4 +1,4 @@
-require 'foreman_proxy_abrt/abrt_version'
+require 'smart_proxy_abrt/abrt_version'
 
 module Proxy::Abrt
   class Plugin < ::Proxy::Plugin

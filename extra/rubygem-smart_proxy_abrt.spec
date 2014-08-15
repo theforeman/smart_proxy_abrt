@@ -1,4 +1,4 @@
-%global gem_name foreman_proxy_abrt
+%global gem_name smart_proxy_abrt
 
 %global foreman_proxy_bundlerd_dir /usr/share/foreman-proxy/bundler.d
 %global foreman_proxy_pluginconf_dir /etc/foreman-proxy/settings.d
@@ -10,12 +10,12 @@ Release: 1%{?dist}
 Summary: Automatic Bug Reporting Tool plugin for Foreman's smart proxy
 Group: Applications/Internet
 License: GPLv3
-URL: http://github.com/abrt/foreman_proxy_abrt
+URL: http://github.com/abrt/smart-proxy-abrt
 Source0: https://fedorahosted.org/released/abrt/%{gem_name}-%{version}.gem
 Requires: ruby(release)
 Requires: ruby(rubygems)
 Requires: rubygem(ffi)
-Requires: foreman-proxy
+Requires: foreman-proxy >= 1.6.0
 Requires: crontabs
 ## does not exist in repository yet
 #Requires: rubygem-satyr

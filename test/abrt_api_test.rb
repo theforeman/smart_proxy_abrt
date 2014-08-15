@@ -5,7 +5,7 @@ require 'tmpdir'
 require 'sinatra'
 
 require 'test_helper'
-require 'foreman_proxy_abrt/abrt_api'
+require 'smart_proxy_abrt/abrt_api'
 
 ENV['RACK_ENV'] = 'test'
 

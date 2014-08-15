@@ -2,8 +2,8 @@ require 'tmpdir'
 require 'fileutils'
 
 require 'test_helper'
-require 'foreman_proxy_abrt'
-require 'foreman_proxy_abrt/abrt_lib'
+require 'smart_proxy_abrt'
+require 'smart_proxy_abrt/abrt_lib'
 
 class AbrtTest < Test::Unit::TestCase
   def setup
