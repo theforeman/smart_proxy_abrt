@@ -1,0 +1,26 @@
+---
+:enabled: true
+
+# Log file for the forwarding script.
+:abrt_send_log_file: /var/log/foreman-proxy/abrt-send.log
+
+# Directory where uReports are stored before they are sent
+:spooldir: /var/spool/foreman-proxy-abrt
+
+# Merge duplicate reports before sending (requires the satyr gem)
+:aggregate_reports: true
+
+# Period (in seconds) after which collected reports are forwarded. Meaningful
+# only if smart-proxy-abrt-send is run as a daemon (not from cron).
+#:send_period: 600
+
+# FAF server instance the reports will be forwarded to (optional)
+#:server_url: https://retrace.fedoraproject.org/faf
+
+# Set to true if FAF server uses self-signed certificate
+#:server_ssl_noverify: true
+
+# Following two options enable client authentication to FAF server
+#:server_ssl_cert: /etc/foreman-proxy/faf_client_cert.pem
+#:server_ssl_key: /etc/foreman-proxy/faf_cleint_key.pem
+
