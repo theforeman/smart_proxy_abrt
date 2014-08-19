@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.executables = ['smart-proxy-abrt-send']
   s.homepage = 'http://github.com/abrt/smart-proxy-abrt'
   s.license = 'GPL-3'
+  s.add_dependency 'satyr', '~> 0.1'
 end
