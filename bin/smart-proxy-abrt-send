@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH.unshift '/usr/share/foreman-proxy/lib' #XXX!
-$LOAD_PATH.unshift '/usr/share/foreman-proxy/modules' #XXX!
+# XXX I can't think of a sane way to not hardcode the paths: the RPM package of
+# smart-proxy does not contain a gem so the gem machinery cannot be used. And
+# we can't have it in the config because we need smart_proxy to read it ...
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/lib'
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/modules'
 
 # We rely on the main smart_proxy module to initialize the plugins so that we
 # can access our module's settings. Also used from smart-proxy code: global
