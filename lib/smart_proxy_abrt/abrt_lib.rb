@@ -4,21 +4,21 @@ require 'uri'
 require 'time'
 require 'fileutils'
 
+require 'openssl'
+
 require 'proxy/log'
 require 'proxy/request'
 
 module Proxy::Abrt
-  def self.random_alpha_string(length)
-    base = ('a'..'z').to_a
-    result = ""
-    length.times { result << base[rand(base.size)] }
-    result
+  # Returns hex representation of random bytes-long number
+  def self.random_hex_string(nbytes)
+    OpenSSL::Random.random_bytes(nbytes).unpack('H*').join
   end
 
   # Generate multipart boundary separator
   def self.suggest_separator
       separator = "-"*28
-      separator + self.random_alpha_string(16)
+      separator + self.random_hex_string(16)
   end
 
   # It seems that Net::HTTP does not support multipart/form-data - this function
@@ -220,7 +220,7 @@ module Proxy::Abrt
     end
 
     def self.unique_filename(prefix)
-      File.join(HostReport.spooldir, prefix + Proxy::Abrt::random_alpha_string(8))
+      File.join(HostReport.spooldir, prefix + Proxy::Abrt::random_hex_string(8))
     end
 
     def self.with_unique_filename(prefix)
