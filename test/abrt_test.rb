@@ -10,8 +10,8 @@ class AbrtTest < Test::Unit::TestCase
     @tmpdir = Dir.mktmpdir "foreman-proxy-test"
     FileUtils.cp Dir["test/fixtures/ureport-ondisk-*"], @tmpdir
 
-    Proxy::Abrt::Plugin.settings.stubs(:aggregate_reports).returns(false)
-    Proxy::Abrt::Plugin.settings.stubs(:spooldir).returns(@tmpdir)
+    AbrtProxy::Plugin.settings.stubs(:aggregate_reports).returns(false)
+    AbrtProxy::Plugin.settings.stubs(:spooldir).returns(@tmpdir)
   end
 
   def teardown
@@ -20,7 +20,7 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_multipart_form_data_file
     file_contents = '{"foo":"bar"}'
-    headers, body = Proxy::Abrt.form_data_file(file_contents, 'application/json')
+    headers, body = AbrtProxy.form_data_file(file_contents, 'application/json')
     request_text = "POST /abrt/whatever/ HTTP/1.1\r\n"
     headers.each do |key,value|
       request_text << key + ": " + value + "\r\n"
@@ -37,22 +37,22 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_hostreport_open
     file = File.join @tmpdir, "ureport-ondisk-host1-01"
-    hr = Proxy::Abrt::HostReport.new file
+    hr = AbrtProxy::HostReport.new file
     assert_equal "f19-managed.virtnet", hr.host
     assert_equal [file], hr.files
     assert_equal 1, hr.reports.size
   end
 
   def test_hostreport_load_directory
-    reports = Proxy::Abrt::HostReport.load_from_spool
+    reports = AbrtProxy::HostReport.load_from_spool
     assert_equal 4, reports.size
-    reports.each { |r| assert r.is_a?(Proxy::Abrt::HostReport) }
+    reports.each { |r| assert r.is_a?(AbrtProxy::HostReport) }
   end
 
   def test_hostreport_merge_without_duphash
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|
-      reports << Proxy::Abrt::HostReport.new(file)
+      reports << AbrtProxy::HostReport.new(file)
     end
 
     assert_equal 3, reports.size
@@ -67,12 +67,12 @@ class AbrtTest < Test::Unit::TestCase
   def test_hostreport_merge_with_duphash
     base = File.join(@tmpdir, "ureport-ondisk-host1-")
     reports = []
-    Proxy::Abrt::HostReport.stubs(:duphash).returns("aaa")
-    reports << Proxy::Abrt::HostReport.new(base + "01")
-    reports << Proxy::Abrt::HostReport.new(base + "02")
-    Proxy::Abrt::HostReport.stubs(:duphash).returns("bbb")
-    reports << Proxy::Abrt::HostReport.new(base + "03")
-    Proxy::Abrt::HostReport.unstub(:duphash)
+    AbrtProxy::HostReport.stubs(:duphash).returns("aaa")
+    reports << AbrtProxy::HostReport.new(base + "01")
+    reports << AbrtProxy::HostReport.new(base + "02")
+    AbrtProxy::HostReport.stubs(:duphash).returns("bbb")
+    reports << AbrtProxy::HostReport.new(base + "03")
+    AbrtProxy::HostReport.unstub(:duphash)
 
     r = reports[0]
     r.merge(reports[1])
@@ -87,7 +87,7 @@ class AbrtTest < Test::Unit::TestCase
 
     reports = []
     Dir[File.join(@tmpdir, "ureport-ondisk-host1-*")].each do |file|
-      reports << Proxy::Abrt::HostReport.new(file)
+      reports << AbrtProxy::HostReport.new(file)
     end
 
     r = reports[0]
@@ -99,13 +99,13 @@ class AbrtTest < Test::Unit::TestCase
 
   def test_hostreport_unlink
     # single report
-    r1 = Proxy::Abrt::HostReport.new File.join(@tmpdir, "ureport-ondisk-host2-01")
+    r1 = AbrtProxy::HostReport.new File.join(@tmpdir, "ureport-ondisk-host2-01")
     r1.unlink
 
     # merged reports
-    r2 = Proxy::Abrt::HostReport.new File.join(@tmpdir, "ureport-ondisk-host1-01")
-    r2.merge Proxy::Abrt::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-02"))
-    r2.merge Proxy::Abrt::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-03"))
+    r2 = AbrtProxy::HostReport.new File.join(@tmpdir, "ureport-ondisk-host1-01")
+    r2.merge AbrtProxy::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-02"))
+    r2.merge AbrtProxy::HostReport.new(File.join(@tmpdir, "ureport-ondisk-host1-03"))
     r2.unlink
 
     dir_contents = Dir[File.join(@tmpdir, "*")]
@@ -116,9 +116,9 @@ class AbrtTest < Test::Unit::TestCase
     Dir[File.join(@tmpdir, "*")].each { |file| File.unlink file }
     ureport = IO.read "test/fixtures/ureport1.json"
     ureport = JSON.parse ureport
-    Proxy::Abrt::HostReport.save "localhost", ureport
+    AbrtProxy::HostReport.save "localhost", ureport
 
-    hr = Proxy::Abrt::HostReport.new Dir[File.join(@tmpdir, "*")][0]
+    hr = AbrtProxy::HostReport.new Dir[File.join(@tmpdir, "*")][0]
     assert_equal "localhost", hr.host
     assert_equal 1, hr.reports.size
   end

@@ -5,14 +5,14 @@ require 'smart_proxy_abrt/abrt_lib'
 
 STATUS_ACCEPTED = 202
 
-module Proxy::Abrt
+module AbrtProxy
   class Api < ::Sinatra::Base
     include ::Proxy::Log
     helpers ::Proxy::Helpers
 
     post '/reports/new/' do
       begin
-        cn = Proxy::Abrt::common_name request
+        cn = AbrtProxy::common_name request
       rescue Proxy::Error::Unauthorized => e
         log_halt 403, "Client authentication failed: #{e.message}"
       end
@@ -22,9 +22,9 @@ module Proxy::Abrt
 
       #forward to FAF
       response = nil
-      if Proxy::Abrt::Plugin.settings.server_url
+      if AbrtProxy::Plugin.settings.server_url
         begin
-          result = Proxy::Abrt::faf_request "/reports/new/", ureport_json
+          result = AbrtProxy::faf_request "/reports/new/", ureport_json
           response = result.body if result.code.to_s == STATUS_ACCEPTED.to_s
         rescue StandardError => e
           logger.error "Unable to forward to ABRT server: #{e}"
@@ -48,7 +48,7 @@ module Proxy::Abrt
 
       #save report to disk
       begin
-        Proxy::Abrt::HostReport.save cn, ureport
+        AbrtProxy::HostReport.save cn, ureport
       rescue StandardError => e
         log_halt 500, "Failed to save the report: #{e}"
       end
@@ -59,10 +59,10 @@ module Proxy::Abrt
 
     post '/reports/:action/' do
       # pass through to real FAF if configured
-      if Proxy::Abrt::Plugin.settings.server_url
+      if AbrtProxy::Plugin.settings.server_url
         body = request['file'][:tempfile].read
         begin
-          result = Proxy::Abrt::faf_request "/reports/#{params[:action]}/", body
+          result = AbrtProxy::faf_request "/reports/#{params[:action]}/", body
         rescue StandardError => e
           log_halt 503, "ABRT server unavailable: #{e}"
         end

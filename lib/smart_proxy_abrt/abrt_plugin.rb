@@ -1,8 +1,8 @@
 require 'smart_proxy_abrt/abrt_version'
 
-module Proxy::Abrt
+module AbrtProxy
   class Plugin < ::Proxy::Plugin
-    plugin :abrt, Proxy::Abrt::VERSION
+    plugin :abrt, AbrtProxy::VERSION
 
     http_rackup_path File.expand_path("http_config.ru", File.expand_path("../", __FILE__))
     https_rackup_path File.expand_path("http_config.ru", File.expand_path("../", __FILE__))
