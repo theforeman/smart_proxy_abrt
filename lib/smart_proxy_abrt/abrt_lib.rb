@@ -157,17 +157,15 @@ module AbrtProxy
       on_disk_report = { "host" => host, "report" => report , "reported_at" => reported_at.to_s }
 
       # write report to temporary file
-      temp_fname = with_unique_filename "new-" do |temp_fname|
-        File.open temp_fname, File::WRONLY|File::CREAT|File::EXCL do |tmpfile|
-          tmpfile.write(on_disk_report.to_json)
-        end
+      temp_fname = unique_filename "new-"
+      File.open temp_fname, File::WRONLY|File::CREAT|File::EXCL do |tmpfile|
+        tmpfile.write(on_disk_report.to_json)
       end
 
       # rename it
-      with_unique_filename ("ureport-" + DateTime.now.iso8601 + "-") do |final_fname|
-        File.link temp_fname, final_fname
-        File.unlink temp_fname
-      end
+      final_fname = unique_filename ("ureport-" + DateTime.now.iso8601 + "-")
+      File.link temp_fname, final_fname
+      File.unlink temp_fname
     end
 
     def self.load_from_spool
@@ -223,20 +221,6 @@ module AbrtProxy
 
     def self.unique_filename(prefix)
       File.join(HostReport.spooldir, prefix + AbrtProxy::random_hex_string(8))
-    end
-
-    def self.with_unique_filename(prefix)
-      filename = unique_filename prefix
-      tries_left = 5
-      begin
-        yield filename
-      rescue Errno::EEXIST => e
-        filename = unique_filename prefix
-        tries_left -= 1
-        retry if tries_left > 0
-        raise HostReport::Error, "Unable to create unique file"
-      end
-      filename
     end
 
     def self.spooldir
