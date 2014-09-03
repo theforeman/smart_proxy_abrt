@@ -69,7 +69,7 @@ module AbrtProxy
         status result.code
         result.body
       else
-        log_halt 501, "foreman-proxy does not implement /reports/#{params[:action]}/"
+        log_halt 404, "foreman-proxy does not implement /reports/#{params[:action]}/"
       end
     end
   end

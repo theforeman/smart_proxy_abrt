@@ -76,7 +76,7 @@ class AbrtApiTest < Test::Unit::TestCase
   def test_forwarding_other_endpoints
     post "/reports/attach/", @post_data
 
-    assert_equal last_response.status, 501
+    assert_equal last_response.status, 404
 
     faf_response = OpenStruct.new(:code => 201, :body => "Whatever!")
     AbrtProxy.expects(:faf_request).returns(faf_response)
