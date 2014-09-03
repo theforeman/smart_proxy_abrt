@@ -19,8 +19,16 @@ module AbrtProxy
         log_halt 403, "Could not determine common name from certificate: #{e.message}"
       end
 
-      ureport_json = request['file'][:tempfile].read
-      ureport = JSON.parse(ureport_json)
+      begin
+        ureport_json = request['file'][:tempfile].read
+      rescue StandardError => e
+        log_halt 400, "Missing report file: #{e.message}"
+      end
+      begin
+        ureport = JSON.parse(ureport_json)
+      rescue JSON::JSONError => e
+        log_halt 400, "Malformed report file: #{e.message}"
+      end
 
       #forward to FAF
       response = nil
@@ -62,7 +70,11 @@ module AbrtProxy
     post '/reports/:action/' do
       # pass through to real FAF if configured
       if AbrtProxy::Plugin.settings.server_url
-        body = request['file'][:tempfile].read
+        begin
+          body = request['file'][:tempfile].read
+        rescue StandardError => e
+          log_halt 400, "File missing: #{e.message}"
+        end
         begin
           result = AbrtProxy::faf_request "/reports/#{params[:action]}/", body
         rescue StandardError => e
