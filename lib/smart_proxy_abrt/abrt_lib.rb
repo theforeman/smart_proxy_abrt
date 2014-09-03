@@ -9,7 +9,12 @@ require 'openssl'
 require 'proxy/log'
 require 'proxy/request'
 
-module Proxy::Abrt
+module AbrtProxy
+  module Error
+    class Unauthorized < StandardError; end
+    class CertificateError < StandardError; end
+  end
+
   # Returns hex representation of random bytes-long number
   def self.random_hex_string(nbytes)
     OpenSSL::Random.random_bytes(nbytes).unpack('H*').join
@@ -44,19 +49,16 @@ module Proxy::Abrt
   end
 
   def self.faf_request(path, content, content_type="application/json")
-    uri              = URI.parse(Proxy::Abrt::Plugin.settings.server_url.to_s)
+    uri              = URI.parse(AbrtProxy::Plugin.settings.server_url.to_s)
     http             = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl     = uri.scheme == 'https'
-    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    http.verify_mode = AbrtProxy::Plugin.settings.server_ssl_noverify ? OpenSSL::SSL::VERIFY_NONE
+                                                                      : OpenSSL::SSL::VERIFY_PEER
 
-    if Proxy::Abrt::Plugin.settings.server_ssl_noverify
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    end
-
-    if Proxy::Abrt::Plugin.settings.server_ssl_cert && !Proxy::Abrt::Plugin.settings.server_ssl_cert.to_s.empty? \
-        && Proxy::Abrt::Plugin.settings.server_ssl_key && !Proxy::Abrt::Plugin.settings.server_ssl_key.to_s.empty?
-      http.cert = OpenSSL::X509::Certificate.new(File.read(Proxy::Abrt::Plugin.settings.server_ssl_cert))
-      http.key  = OpenSSL::PKey::RSA.new(File.read(Proxy::Abrt::Plugin.settings.server_ssl_key), nil)
+    if AbrtProxy::Plugin.settings.server_ssl_cert && !AbrtProxy::Plugin.settings.server_ssl_cert.to_s.empty? \
+        && AbrtProxy::Plugin.settings.server_ssl_key && !AbrtProxy::Plugin.settings.server_ssl_key.to_s.empty?
+      http.cert = OpenSSL::X509::Certificate.new(File.read(AbrtProxy::Plugin.settings.server_ssl_cert))
+      http.key  = OpenSSL::PKey::RSA.new(File.read(AbrtProxy::Plugin.settings.server_ssl_key), nil)
     end
 
     headers, body = self.form_data_file content, content_type
@@ -69,17 +71,17 @@ module Proxy::Abrt
 
   def self.common_name(request)
     client_cert = request.env['SSL_CLIENT_CERT']
-    raise Proxy::Error::Unauthorized, "Client certificate required" if client_cert.to_s.empty?
+    raise AbrtProxy::Error::Unauthorized, "Client certificate required" if client_cert.to_s.empty?
 
     begin
       client_cert = OpenSSL::X509::Certificate.new(client_cert)
     rescue OpenSSL::OpenSSLError => e
-      raise Proxy::Error::Unauthorized, e.message
+      raise AbrtProxy::Error::CertificateError, e.message
     end
 
     cn = client_cert.subject.to_a.detect { |name, value| name == 'CN' }
     cn = cn[1] unless cn.nil?
-    raise Proxy::Error::Unauthorized, "Common Name not found in the certificate" unless cn
+    raise AbrtProxy::Error::CertificateError, "Common Name not found in the certificate" unless cn
 
     return cn
   end
@@ -155,17 +157,15 @@ module Proxy::Abrt
       on_disk_report = { "host" => host, "report" => report , "reported_at" => reported_at.to_s }
 
       # write report to temporary file
-      temp_fname = with_unique_filename "new-" do |temp_fname|
-        File.open temp_fname, File::WRONLY|File::CREAT|File::EXCL do |tmpfile|
-          tmpfile.write(on_disk_report.to_json)
-        end
+      temp_fname = unique_filename "new-"
+      File.open temp_fname, File::WRONLY|File::CREAT|File::EXCL do |tmpfile|
+        tmpfile.write(on_disk_report.to_json)
       end
 
       # rename it
-      with_unique_filename ("ureport-" + DateTime.now.iso8601 + "-") do |final_fname|
-        File.link temp_fname, final_fname
-        File.unlink temp_fname
-      end
+      final_fname = unique_filename ("ureport-" + DateTime.now.iso8601 + "-")
+      File.link temp_fname, final_fname
+      File.unlink temp_fname
     end
 
     def self.load_from_spool
@@ -206,7 +206,7 @@ module Proxy::Abrt
     end
 
     def self.duphash(report)
-      return nil if !Proxy::Abrt::Plugin.settings.aggregate_reports
+      return nil if !AbrtProxy::Plugin.settings.aggregate_reports
 
       begin
         satyr_report = Satyr::Report.new report.to_json
@@ -220,25 +220,11 @@ module Proxy::Abrt
     end
 
     def self.unique_filename(prefix)
-      File.join(HostReport.spooldir, prefix + Proxy::Abrt::random_hex_string(8))
-    end
-
-    def self.with_unique_filename(prefix)
-      filename = unique_filename prefix
-      tries_left = 5
-      begin
-        yield filename
-      rescue Errno::EEXIST => e
-        filename = unique_filename prefix
-        tries_left -= 1
-        retry if tries_left > 0
-        raise HostReport::Error, "Unable to create unique file"
-      end
-      filename
+      File.join(HostReport.spooldir, prefix + AbrtProxy::random_hex_string(8))
     end
 
     def self.spooldir
-      Proxy::Abrt::Plugin.settings.spooldir || File.join(APP_ROOT, "spool/foreman-proxy-abrt")
+      AbrtProxy::Plugin.settings.spooldir
     end
   end
 end

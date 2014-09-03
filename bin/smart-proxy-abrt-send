@@ -17,14 +17,14 @@ require 'smart_proxy_abrt/abrt_lib'
 # Substitute our own logger so that we don't log to the main smart-proxy logfile.
 module Proxy
   module Log
-    @@logger = ::Logger.new(Proxy::Abrt::Plugin.settings.abrt_send_log_file, 6, 1024*1024*10)
+    @@logger = ::Logger.new(AbrtProxy::Plugin.settings.abrt_send_log_file, 6, 1024*1024*10)
     @@logger.level = ::Logger.const_get(Proxy::SETTINGS.log_level.upcase)
   end
 end
 include Proxy::Log
 
 # Don't run if ABRT plugin is disabled.
-exit unless Proxy::Abrt::Plugin.settings.enabled == true
+exit unless AbrtProxy::Plugin.settings.enabled == true
 
 if !Proxy::SETTINGS.foreman_url
   logger.error "Foreman URL not configured"
@@ -32,7 +32,7 @@ if !Proxy::SETTINGS.foreman_url
 end
 
 begin
-  require 'satyr' if Proxy::Abrt::Plugin.settings.aggregate_reports
+  require 'satyr' if AbrtProxy::Plugin.settings.aggregate_reports
 rescue LoadError
   logger.error "The satyr gem required for report aggregation was not found. "\
                "You need to either install it or disable the aggregation."
@@ -42,7 +42,7 @@ def send_reports_from_spool
   reports_by_host = {}
 
   # load reports from disk
-  reports = Proxy::Abrt::HostReport.load_from_spool
+  reports = AbrtProxy::HostReport.load_from_spool
 
   # aggregate reports by host and by duplication hash if possible
   reports.each do |report|
@@ -85,7 +85,7 @@ if ARGV[0] == "--daemon"
   require 'daemon'
   Process.daemon true
 
-  sleep_interval = Proxy::Abrt::Plugin.settings.abrt_send_period || 600
+  sleep_interval = AbrtProxy::Plugin.settings.abrt_send_period || 600
   loop do
     send_reports_from_spool
     sleep sleep_interval
