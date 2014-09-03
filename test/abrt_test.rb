@@ -1,5 +1,6 @@
 require 'tmpdir'
 require 'fileutils'
+require 'webrick'
 
 require 'test_helper'
 require 'smart_proxy_abrt'

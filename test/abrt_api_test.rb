@@ -1,8 +1,6 @@
 require 'json'
 require 'ostruct'
-require 'webrick'
 require 'tmpdir'
-require 'sinatra'
 
 require 'test_helper'
 require 'smart_proxy_abrt/abrt_api'
