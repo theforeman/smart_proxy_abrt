@@ -235,7 +235,7 @@ module AbrtProxy
     end
 
     def self.spooldir
-      AbrtProxy::Plugin.settings.spooldir || File.join(APP_ROOT, "spool/foreman-proxy-abrt")
+      AbrtProxy::Plugin.settings.spooldir
     end
   end
 end
