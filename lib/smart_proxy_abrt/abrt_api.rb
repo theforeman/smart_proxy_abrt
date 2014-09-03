@@ -13,8 +13,10 @@ module AbrtProxy
     post '/reports/new/' do
       begin
         cn = AbrtProxy::common_name request
-      rescue Proxy::Error::Unauthorized => e
-        log_halt 403, "Client authentication failed: #{e.message}"
+      rescue AbrtProxy::Error::Unauthorized => e
+        log_halt 403, "Client authentication required: #{e.message}"
+      rescue AbrtProxy::Error::CertificateError => e
+        log_halt 403, "Could not determine common name from certificate: #{e.message}"
       end
 
       ureport_json = request['file'][:tempfile].read

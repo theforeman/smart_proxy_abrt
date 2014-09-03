@@ -10,6 +10,11 @@ require 'proxy/log'
 require 'proxy/request'
 
 module AbrtProxy
+  module Error
+    class Unauthorized < StandardError; end
+    class CertificateError < StandardError; end
+  end
+
   # Returns hex representation of random bytes-long number
   def self.random_hex_string(nbytes)
     OpenSSL::Random.random_bytes(nbytes).unpack('H*').join
@@ -66,17 +71,17 @@ module AbrtProxy
 
   def self.common_name(request)
     client_cert = request.env['SSL_CLIENT_CERT']
-    raise Proxy::Error::Unauthorized, "Client certificate required" if client_cert.to_s.empty?
+    raise AbrtProxy::Error::Unauthorized, "Client certificate required" if client_cert.to_s.empty?
 
     begin
       client_cert = OpenSSL::X509::Certificate.new(client_cert)
     rescue OpenSSL::OpenSSLError => e
-      raise Proxy::Error::Unauthorized, e.message
+      raise AbrtProxy::Error::CertificateError, e.message
     end
 
     cn = client_cert.subject.to_a.detect { |name, value| name == 'CN' }
     cn = cn[1] unless cn.nil?
-    raise Proxy::Error::Unauthorized, "Common Name not found in the certificate" unless cn
+    raise AbrtProxy::Error::CertificateError, "Common Name not found in the certificate" unless cn
 
     return cn
   end
