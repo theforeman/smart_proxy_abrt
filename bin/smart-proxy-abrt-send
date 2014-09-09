@@ -59,15 +59,15 @@ def send_reports_from_spool
   end
 
   # send reports
-  reports_by_host.each_value do |hr|
+  reports_by_host.each do |host, hr|
     begin
       result = hr.send_to_foreman
     rescue => e
-      logger.error "Unable to forward to Foreman server: #{e}"
+      logger.error "Unable to forward report from #{host} to Foreman server: #{e}"
       next
     end
     unless result.is_a? Net::HTTPSuccess
-      logger.error "Foreman server rejected report (status #{result.code}): #{result.body}"
+      logger.error "Foreman server rejected report from #{host} (status #{result.code}): #{result.body}"
     end
     begin
       hr.unlink
