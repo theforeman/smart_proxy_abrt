@@ -22,7 +22,7 @@ module AbrtProxy
       begin
         ureport_json = request['file'][:tempfile].read
       rescue => e
-        log_halt 400, "Missing report file: #{e.message}"
+        log_halt 400, "Missing report file"
       end
       begin
         ureport = JSON.parse(ureport_json)
