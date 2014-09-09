@@ -195,8 +195,6 @@ module AbrtProxy
       end
     end
 
-    # http://projects.theforeman.org/projects/foreman/wiki/Json-report-format
-    # To be replaced once Foreman understands other report types than from Puppet.
     def create_foreman_report
       { "abrt_report" => {
             "host"        => @host,
