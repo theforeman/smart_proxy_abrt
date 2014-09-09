@@ -49,7 +49,7 @@ def send_reports_from_spool
     if reports_by_host.has_key? report.host
       begin
         reports_by_host[report.host].merge report
-      rescue StandardError => e
+      rescue => e
         logger.error "Failed to merge #{report.files[0]} " \
                      "into #{reports_by_host[report.host].files}: #{e}"
       end
@@ -62,7 +62,7 @@ def send_reports_from_spool
   reports_by_host.each_value do |hr|
     begin
       result = hr.send_to_foreman
-    rescue StandardError => e
+    rescue => e
       logger.error "Unable to forward to Foreman server: #{e}"
       next
     end
@@ -71,7 +71,7 @@ def send_reports_from_spool
     end
     begin
       hr.unlink
-    rescue StandardError => e
+    rescue => e
       logger.error "Cannot delete #{hr.files}: #{e}"
     end
   end

@@ -174,7 +174,7 @@ module AbrtProxy
       report_files.each do |fname|
         begin
           reports << new(fname)
-        rescue StandardError => e
+        rescue => e
           logger.error "Failed to parse report #{fname}: #{e}"
         end
       end
@@ -213,7 +213,7 @@ module AbrtProxy
         stacktrace = satyr_report.stacktrace
         thread = stacktrace.find_crash_thread
         thread.duphash
-      rescue StandardError => e
+      rescue => e
         logger.error "Error computing duphash: #{e}"
         nil
       end
