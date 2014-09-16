@@ -13,6 +13,7 @@ module AbrtProxy
   module Error
     class Unauthorized < StandardError; end
     class CertificateError < StandardError; end
+    class SyntaxError < StandardError; end
   end
 
   # Returns hex representation of random bytes-long number
@@ -106,6 +107,12 @@ module AbrtProxy
     def initialize(fname)
       contents = IO.read(fname)
       json = JSON.parse(contents)
+
+      [:report, :reported_at, :host].each do |field|
+        if !json.has_key?(field.to_s)
+          raise AbrtProxy::Error::SyntaxError, "Report #{fname} missing field #{field}"
+        end
+      end
 
       report = json["report"]
       hash = HostReport.duphash report
