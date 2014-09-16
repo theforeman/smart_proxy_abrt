@@ -24,7 +24,10 @@ end
 include Proxy::Log
 
 # Don't run if ABRT plugin is disabled.
-exit unless AbrtProxy::Plugin.settings.enabled == true
+if AbrtProxy::Plugin.settings.enabled != true
+  puts "ABRT plugin is disabled - exiting"
+  exit true
+end
 
 if !Proxy::SETTINGS.foreman_url
   logger.error "Foreman URL not configured"
