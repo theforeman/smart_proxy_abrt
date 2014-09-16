@@ -21,8 +21,8 @@ module AbrtProxy
 
       begin
         ureport_json = request['file'][:tempfile].read
-      rescue StandardError => e
-        log_halt 400, "Missing report file: #{e.message}"
+      rescue => e
+        log_halt 400, "Missing report file"
       end
       begin
         ureport = JSON.parse(ureport_json)
@@ -36,7 +36,7 @@ module AbrtProxy
         begin
           result = AbrtProxy::faf_request "/reports/new/", ureport_json
           response = result.body if result.code.to_s == STATUS_ACCEPTED.to_s
-        rescue StandardError => e
+        rescue => e
           logger.error "Unable to forward to ABRT server: #{e}"
         end
       end
@@ -59,7 +59,7 @@ module AbrtProxy
       #save report to disk
       begin
         AbrtProxy::HostReport.save cn, ureport
-      rescue StandardError => e
+      rescue => e
         log_halt 500, "Failed to save the report: #{e}"
       end
 
@@ -72,12 +72,12 @@ module AbrtProxy
       if AbrtProxy::Plugin.settings.server_url
         begin
           body = request['file'][:tempfile].read
-        rescue StandardError => e
+        rescue => e
           log_halt 400, "File missing: #{e.message}"
         end
         begin
           result = AbrtProxy::faf_request "/reports/#{params[:action]}/", body
-        rescue StandardError => e
+        rescue => e
           log_halt 503, "ABRT server unavailable: #{e}"
         end
         status result.code

@@ -13,6 +13,7 @@ module AbrtProxy
   module Error
     class Unauthorized < StandardError; end
     class CertificateError < StandardError; end
+    class SyntaxError < StandardError; end
   end
 
   # Returns hex representation of random bytes-long number
@@ -107,6 +108,12 @@ module AbrtProxy
       contents = IO.read(fname)
       json = JSON.parse(contents)
 
+      [:report, :reported_at, :host].each do |field|
+        if !json.has_key?(field.to_s)
+          raise AbrtProxy::Error::SyntaxError, "Report #{fname} missing field #{field}"
+        end
+      end
+
       report = json["report"]
       hash = HostReport.duphash report
       ar = AggregatedReport.new(json["report"], 1, hash, json["reported_at"])
@@ -174,7 +181,7 @@ module AbrtProxy
       report_files.each do |fname|
         begin
           reports << new(fname)
-        rescue StandardError => e
+        rescue => e
           logger.error "Failed to parse report #{fname}: #{e}"
         end
       end
@@ -195,8 +202,6 @@ module AbrtProxy
       end
     end
 
-    # http://projects.theforeman.org/projects/foreman/wiki/Json-report-format
-    # To be replaced once Foreman understands other report types than from Puppet.
     def create_foreman_report
       { "abrt_report" => {
             "host"        => @host,
@@ -213,7 +218,7 @@ module AbrtProxy
         stacktrace = satyr_report.stacktrace
         thread = stacktrace.find_crash_thread
         thread.duphash
-      rescue StandardError => e
+      rescue => e
         logger.error "Error computing duphash: #{e}"
         nil
       end
