@@ -19,7 +19,7 @@ module AbrtProxy
 
     def check_file(conf_sym)
       path = settings.send(conf_sym)
-      if path && !path.to_s.empty? && !File.exist?(path)
+      unless (path.to_s.empty? or File.exist?(path))
         logger.error "Cannot find #{conf_sym} file #{path}"
       end
     end
