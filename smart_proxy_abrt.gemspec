@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email = 'mmilata@redhat.com'
   s.files = Dir['{bin,lib,settings.d,bundler.d,test,extra}/**/*'] + ['README', 'LICENSE', 'Rakefile']
   s.executables = ['smart-proxy-abrt-send']
-  s.homepage = 'http://github.com/abrt/smart-proxy-abrt'
+  s.homepage = 'http://github.com/theforeman/smart_proxy_abrt'
   s.license = 'GPL-3'
   s.add_dependency 'satyr', '~> 0.1'
 end
