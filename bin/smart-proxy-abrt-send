@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+
+# XXX I can't think of a sane way to not hardcode the paths: the RPM package of
+# smart-proxy does not contain a gem so the gem machinery cannot be used. And
+# we can't have it in the config because we need smart_proxy to read it ...
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/lib'
+$LOAD_PATH.unshift '/usr/share/foreman-proxy/modules'
+
+# We rely on the main smart_proxy module to initialize the plugins so that we
+# can access our module's settings. Also used from smart-proxy code: global
+# settings, logging, foreman requests.
+require 'smart_proxy'
+
+require 'smart_proxy_abrt'
+require 'smart_proxy_abrt/abrt_lib'
+
+# Substitute our own logger so that we don't log to the main smart-proxy logfile.
+module Proxy
+  module Log
+    @@logger = ::Logger.new(AbrtProxy::Plugin.settings.abrt_send_log_file, 6, 1024*1024*10)
+    @@logger.level = ::Logger.const_get(Proxy::SETTINGS.log_level.upcase)
+  end
+end
+include Proxy::Log
+
+# Don't run if ABRT plugin is disabled.
+if AbrtProxy::Plugin.settings.enabled != true
+  puts "ABRT plugin is disabled - exiting"
+  exit true
+end
+
+if !Proxy::SETTINGS.foreman_url
+  logger.error "Foreman URL not configured"
+  exit false
+end
+
+begin
+  require 'satyr' if AbrtProxy::Plugin.settings.aggregate_reports
+rescue LoadError
+  logger.error "The satyr gem required for report aggregation was not found. "\
+               "You need to either install it or disable the aggregation."
+end
+
+def send_reports_from_spool
+  reports_by_host = {}
+
+  # load reports from disk
+  reports = AbrtProxy::HostReport.load_from_spool
+
+  # aggregate reports by host and by duplication hash if possible
+  reports.each do |report|
+    if reports_by_host.has_key? report.host
+      begin
+        reports_by_host[report.host].merge report
+      rescue => e
+        logger.error "Failed to merge #{report.files[0]} " \
+                     "into #{reports_by_host[report.host].files}: #{e}"
+      end
+    else
+      reports_by_host[report.host] = report
+    end
+  end
+
+  # send reports
+  reports_by_host.each do |host, hr|
+    begin
+      result = hr.send_to_foreman
+    rescue => e
+      logger.error "Unable to forward report from #{host} to Foreman server: #{e}"
+      next
+    end
+    unless result.is_a? Net::HTTPSuccess
+      logger.error "Foreman server rejected report from #{host} (status #{result.code}): #{result.body}"
+    end
+    begin
+      hr.unlink
+    rescue => e
+      logger.error "Cannot delete #{hr.files}: #{e}"
+    end
+  end
+end
+
+if ARGV[0] == "--daemon"
+  if PLATFORM =~ /mingw/
+    puts "Daemon mode is not supported on Windows."
+    exit false
+  end
+  require 'daemon'
+  Process.daemon true
+
+  sleep_interval = AbrtProxy::Plugin.settings.abrt_send_period || 600
+  loop do
+    send_reports_from_spool
+    sleep sleep_interval
+  end
+else
+  send_reports_from_spool
+end
