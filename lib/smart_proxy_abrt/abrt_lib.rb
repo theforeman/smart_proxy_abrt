@@ -53,8 +53,12 @@ module AbrtProxy
     uri              = URI.parse(AbrtProxy::Plugin.settings.server_url.to_s)
     http             = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl     = uri.scheme == 'https'
-    http.verify_mode = AbrtProxy::Plugin.settings.server_ssl_noverify ? OpenSSL::SSL::VERIFY_NONE
-                                                                      : OpenSSL::SSL::VERIFY_PEER
+    http.verify_mode =
+      if AbrtProxy::Plugin.settings.server_ssl_noverify
+        OpenSSL::SSL::VERIFY_NONE
+      else
+        OpenSSL::SSL::VERIFY_PEER
+      end
 
     if AbrtProxy::Plugin.settings.server_ssl_cert && !AbrtProxy::Plugin.settings.server_ssl_cert.to_s.empty? \
         && AbrtProxy::Plugin.settings.server_ssl_key && !AbrtProxy::Plugin.settings.server_ssl_key.to_s.empty?
@@ -170,7 +174,7 @@ module AbrtProxy
       end
 
       # rename it
-      final_fname = unique_filename ("ureport-" + DateTime.now.iso8601 + "-")
+      final_fname = unique_filename("ureport-" + DateTime.now.iso8601 + "-")
       File.link temp_fname, final_fname
       File.unlink temp_fname
     end
