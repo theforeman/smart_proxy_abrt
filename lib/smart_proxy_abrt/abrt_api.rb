@@ -47,7 +47,7 @@ module AbrtProxy
                      "message" => "Report queued" }
         if Proxy::SETTINGS.foreman_url
           foreman_url = Proxy::SETTINGS.foreman_url
-          foreman_url += "/" if url[-1] != "/"
+          foreman_url += "/" if foreman_url[-1] != "/"
           foreman_url += "hosts/#{cn}/abrt_reports"
           response["reported_to"] = [{ "reporter" => "Foreman",
                                        "type" => "url",
