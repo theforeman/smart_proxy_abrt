@@ -174,7 +174,7 @@ module AbrtProxy
       end
 
       # rename it
-      final_fname = unique_filename("ureport-" + DateTime.now.iso8601 + "-")
+      final_fname = unique_filename("ureport-" + DateTime.now.strftime("%FT%T") + "-")
       File.link temp_fname, final_fname
       File.unlink temp_fname
     end
