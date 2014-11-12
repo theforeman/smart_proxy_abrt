@@ -91,6 +91,12 @@ module AbrtProxy
     return cn
   end
 
+  class AbrtRequest < Proxy::HttpRequest::ForemanRequest
+    def post_report(report)
+      send_request(request_factory.create_post('/api/abrt_reports', report))
+    end
+  end
+
   class HostReport
     include Proxy::Log
 
@@ -150,7 +156,7 @@ module AbrtProxy
     def send_to_foreman
       foreman_report = create_foreman_report
       logger.debug "Sending #{foreman_report}"
-      Proxy::HttpRequest::ForemanRequest.new.send_request("/api/abrt_reports", foreman_report.to_json)
+      AbrtRequest.new.post_report(foreman_report.to_json)
     end
 
     def unlink
