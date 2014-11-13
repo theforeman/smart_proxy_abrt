@@ -117,7 +117,7 @@ class AbrtTest < Test::Unit::TestCase
     Dir[File.join(@tmpdir, "*")].each { |file| File.unlink file }
     ureport = IO.read "test/fixtures/ureport1.json"
     ureport = JSON.parse ureport
-    AbrtProxy::HostReport.save "localhost", ureport
+    AbrtProxy::HostReport.save ["localhost"], ureport
 
     hr = AbrtProxy::HostReport.new Dir[File.join(@tmpdir, "*")][0]
     assert_equal "localhost", hr.host

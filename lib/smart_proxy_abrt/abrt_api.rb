@@ -12,7 +12,7 @@ module AbrtProxy
 
     post '/reports/new/' do
       begin
-        cn = AbrtProxy::common_name request
+        names = AbrtProxy::cert_names request
       rescue AbrtProxy::Error::Unauthorized => e
         log_halt 403, "Client authentication required: #{e.message}"
       rescue AbrtProxy::Error::CertificateError => e
@@ -48,7 +48,7 @@ module AbrtProxy
         if Proxy::SETTINGS.foreman_url
           foreman_url = Proxy::SETTINGS.foreman_url
           foreman_url += "/" if foreman_url[-1] != "/"
-          foreman_url += "hosts/#{cn}/abrt_reports"
+          foreman_url += "hosts/#{names[-1]}/abrt_reports"
           response["reported_to"] = [{ "reporter" => "Foreman",
                                        "type" => "url",
                                        "value" => foreman_url }]
@@ -58,7 +58,7 @@ module AbrtProxy
 
       #save report to disk
       begin
-        AbrtProxy::HostReport.save cn, ureport
+        AbrtProxy::HostReport.save names, ureport
       rescue => e
         log_halt 500, "Failed to save the report: #{e}"
       end

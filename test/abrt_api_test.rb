@@ -19,7 +19,7 @@ class AbrtApiTest < Test::Unit::TestCase
     @post_data = {
       "file" => Rack::Test::UploadedFile.new(ureport_file, "application/json")
     }
-    AbrtProxy.stubs(:common_name).returns('localhost')
+    AbrtProxy.stubs(:cert_names).returns(['localhost'])
   end
 
   def assert_dir_contains_report(dir)

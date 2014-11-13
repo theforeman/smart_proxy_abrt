@@ -74,7 +74,7 @@ module AbrtProxy
     response
   end
 
-  def self.common_name(request)
+  def self.cert_names(request)
     client_cert = request.env['SSL_CLIENT_CERT']
     raise AbrtProxy::Error::Unauthorized, "Client certificate required" if client_cert.to_s.empty?
 
@@ -84,11 +84,22 @@ module AbrtProxy
       raise AbrtProxy::Error::CertificateError, e.message
     end
 
-    cn = client_cert.subject.to_a.detect { |name, value| name == 'CN' }
-    cn = cn[1] unless cn.nil?
-    raise AbrtProxy::Error::CertificateError, "Common Name not found in the certificate" unless cn
+    begin
+      cn = client_cert.subject.to_a.find { |name, value| name == 'CN' }
+      names = [cn[1]]
+    rescue NoMethodError
+      raise AbrtProxy::Error::CertificateError, "Common Name not found in the certificate"
+    end
 
-    return cn
+    alt_name_ext = client_cert.extensions.find { |ext| ext.oid == 'subjectAltName' }
+    if alt_name_ext
+      names += alt_name_ext.value.
+                            split(/, ?/).
+                            select { |s| s.start_with? 'URI:CN=' }.
+                            map { |s| s.sub(/^URI:CN=/, '') }
+    end
+
+    return names
   end
 
   class AbrtRequest < Proxy::HttpRequest::ForemanRequest
@@ -133,6 +144,7 @@ module AbrtProxy
       @by_hash[hash] = ar unless hash.nil?
       @files = [fname]
       @host = json["host"]
+      @althosts = json["althosts"]
     end
 
     def merge(other)
@@ -166,12 +178,12 @@ module AbrtProxy
       end
     end
 
-    def self.save(host, report, reported_at=nil)
+    def self.save(hostnames, report, reported_at=nil)
       # create the spool dir if it does not exist
       FileUtils.mkdir_p HostReport.spooldir
 
       reported_at ||= Time.now.utc
-      on_disk_report = { "host" => host, "report" => report , "reported_at" => reported_at.to_s }
+      on_disk_report = { "host" => hostnames[0], "report" => report , "reported_at" => reported_at.to_s, "althosts" => hostnames[1..-1] }
 
       # write report to temporary file
       temp_fname = unique_filename "new-"
@@ -215,6 +227,7 @@ module AbrtProxy
     def create_foreman_report
       { "abrt_report" => {
             "host"        => @host,
+            "althosts"    => @althosts,
             "reports"     => format_reports
         }
       }
