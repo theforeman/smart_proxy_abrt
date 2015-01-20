@@ -12,4 +12,7 @@ Gem::Specification.new do |s|
   s.homepage = 'http://github.com/theforeman/smart_proxy_abrt'
   s.license = 'GPL-3'
   s.add_dependency 'satyr', '~> 0.1'
+  s.add_development_dependency('rake')
+  s.add_development_dependency('rack-test')
+  s.add_development_dependency('mocha')
 end
