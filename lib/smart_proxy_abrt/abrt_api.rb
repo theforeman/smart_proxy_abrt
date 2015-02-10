@@ -9,6 +9,7 @@ module AbrtProxy
   class Api < ::Sinatra::Base
     include ::Proxy::Log
     helpers ::Proxy::Helpers
+    authorize_with_ssl_client
 
     post '/reports/new/' do
       begin
