@@ -104,7 +104,7 @@ module AbrtProxy
 
   class AbrtRequest < Proxy::HttpRequest::ForemanRequest
     def post_report(report)
-      send_request(request_factory.create_post('/api/abrt_reports', report))
+      send_request(request_factory.create_post('api/abrt_reports', report))
     end
   end
 
