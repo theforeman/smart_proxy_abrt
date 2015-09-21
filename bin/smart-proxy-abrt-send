@@ -24,7 +24,7 @@ end
 include Proxy::Log
 
 # Don't run if ABRT plugin is disabled.
-if AbrtProxy::Plugin.settings.enabled != true
+if !AbrtProxy::Plugin.settings.enabled
   puts "ABRT plugin is disabled - exiting"
   exit true
 end
