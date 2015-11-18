@@ -9,15 +9,19 @@ module AbrtProxy
   class Api < ::Sinatra::Base
     include ::Proxy::Log
     helpers ::Proxy::Helpers
-    authorize_with_ssl_client
+    authorize_with_ssl_client unless AbrtProxy::Plugin.settings.insecure
 
     post '/reports/new/' do
-      begin
-        names = AbrtProxy::cert_names request
-      rescue AbrtProxy::Error::Unauthorized => e
-        log_halt 403, "Client authentication required: #{e.message}"
-      rescue AbrtProxy::Error::CertificateError => e
-        log_halt 403, "Could not determine common name from certificate: #{e.message}"
+      if AbrtProxy::Plugin.settings.insecure
+        names = [request.ip]
+      else
+        begin
+          names = AbrtProxy::cert_names request
+        rescue AbrtProxy::Error::Unauthorized => e
+          log_halt 403, "Client authentication required: #{e.message}"
+        rescue AbrtProxy::Error::CertificateError => e
+          log_halt 403, "Could not determine common name from certificate: #{e.message}"
+        end
       end
 
       begin
