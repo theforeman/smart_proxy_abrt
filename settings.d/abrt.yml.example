@@ -24,3 +24,5 @@
 #:server_ssl_cert: /etc/foreman-proxy/faf_client_cert.pem
 #:server_ssl_key: /etc/foreman-proxy/faf_cleint_key.pem
 
+# Ignore SSL (for development only)
+#:insecure: true
