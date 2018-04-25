@@ -10,21 +10,23 @@ $LOAD_PATH.unshift '/usr/share/foreman-proxy/modules'
 # can access our module's settings. Also used from smart-proxy code: global
 # settings, logging, foreman requests.
 require 'smart_proxy_main'
-
+require 'yaml'
 require 'smart_proxy_abrt'
 require 'smart_proxy_abrt/abrt_lib'
+
+$settings = YAML::load(File.open('/etc/foreman-proxy/settings.d/abrt.yml'))
 
 # Substitute our own logger so that we don't log to the main smart-proxy logfile.
 module Proxy
   module Log
-    @@logger = ::Logger.new(AbrtProxy::Plugin.settings.abrt_send_log_file, 6, 1024*1024*10)
+    @@logger = ::Logger.new($settings[:'abrt_send_log_file'], 6, 1024*1024*10)
     @@logger.level = ::Logger.const_get(Proxy::SETTINGS.log_level.upcase)
   end
 end
 include Proxy::Log
 
 # Don't run if ABRT plugin is disabled.
-if !AbrtProxy::Plugin.settings.enabled
+if !$settings[:'enabled']
   puts "ABRT plugin is disabled - exiting"
   exit true
 end
@@ -35,7 +37,7 @@ if !Proxy::SETTINGS.foreman_url
 end
 
 begin
-  require 'satyr' if AbrtProxy::Plugin.settings.aggregate_reports
+  require 'satyr' if $settings[:'aggregate_reports']
 rescue LoadError
   logger.error "The satyr gem required for report aggregation was not found. "\
                "You need to either install it or disable the aggregation."
@@ -88,7 +90,7 @@ if ARGV[0] == "--daemon"
   require 'daemon'
   Process.daemon true
 
-  sleep_interval = AbrtProxy::Plugin.settings.abrt_send_period || 600
+  sleep_interval = $settings[:'abrt_send_period'] || 600
   loop do
     send_reports_from_spool
     sleep sleep_interval
