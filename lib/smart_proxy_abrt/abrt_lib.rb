@@ -2,12 +2,16 @@ require 'net/http'
 require 'net/https'
 require 'uri'
 require 'time'
+require 'yaml'
 require 'fileutils'
 
 require 'openssl'
 
 require 'proxy/log'
 require 'proxy/request'
+
+$settings = YAML::load(File.open('/etc/foreman-proxy/settings.d/abrt.yml'))
+
 
 module AbrtProxy
   module Error
@@ -50,20 +54,20 @@ module AbrtProxy
   end
 
   def self.faf_request(path, content, content_type="application/json")
-    uri              = URI.parse(AbrtProxy::Plugin.settings.server_url.to_s)
+    uri              = URI.parse($settings[:'server_url'].to_s)
     http             = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl     = uri.scheme == 'https'
     http.verify_mode =
-      if AbrtProxy::Plugin.settings.server_ssl_noverify
+      if $setting[:'server_ssl_noverify']
         OpenSSL::SSL::VERIFY_NONE
       else
         OpenSSL::SSL::VERIFY_PEER
       end
 
-    if AbrtProxy::Plugin.settings.server_ssl_cert && !AbrtProxy::Plugin.settings.server_ssl_cert.to_s.empty? \
-        && AbrtProxy::Plugin.settings.server_ssl_key && !AbrtProxy::Plugin.settings.server_ssl_key.to_s.empty?
-      http.cert = OpenSSL::X509::Certificate.new(File.read(AbrtProxy::Plugin.settings.server_ssl_cert))
-      http.key  = OpenSSL::PKey::RSA.new(File.read(AbrtProxy::Plugin.settings.server_ssl_key), nil)
+    if $settings[:'server_ssl_cert'] && !settings[:'server_ssl_cert'].to_s.empty? \
+        && $settings[:'server_ssl_key'] && !$settings[:'server_ssl_key'].to_s.empty?
+      http.cert = OpenSSL::X509::Certificate.new(File.read($settings[:'server_ssl_cert']))
+      http.key  = OpenSSL::PKey::RSA.new(File.read($settings[:'server_ssl_key']), nil)
     end
 
     headers, body = self.form_data_file content, content_type
@@ -234,7 +238,7 @@ module AbrtProxy
     end
 
     def self.duphash(report)
-      return nil if !AbrtProxy::Plugin.settings.aggregate_reports
+      return nil if !$settings[:'aggregate_reports']
 
       begin
         satyr_report = Satyr::Report.new report.to_json
@@ -252,7 +256,7 @@ module AbrtProxy
     end
 
     def self.spooldir
-      AbrtProxy::Plugin.settings.spooldir
+      $settings[:'spooldir']
     end
   end
 end
